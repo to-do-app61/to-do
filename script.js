@@ -1,4 +1,6 @@
-// Selezioniamo gli elementi del DOM
+// ==========================================
+// SELEZIONE ELEMENTI DEL DOM
+// ==========================================
 const taskNameInput = document.getElementById('taskName');
 const taskTimeInput = document.getElementById('taskTime');
 const addTaskBtn = document.getElementById('addTaskBtn');
@@ -7,10 +9,15 @@ const exportBtn = document.getElementById('exportData');
 const importBtn = document.getElementById('importData');
 const shareBtn = document.getElementById('shareBtn');
 
-// Stato dell'applicazione: Caricamento dal localStorage
-let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+// Elementi per la Wake Lock API
+const statusText = document.getElementById('statusText');
+const dot = document.querySelector('.dot');
 
-// --- FUNZIONI DI GESTIONE DATI ---
+// ==========================================
+// STATO E PERSISTENZA DATI
+// ==========================================
+// Carichiamo i task dal localStorage o inizializziamo un array vuoto
+let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
 
 function saveTasks() {
     localStorage.setItem('myTasks', JSON.stringify(tasks));
@@ -23,7 +30,7 @@ function renderTasks() {
         li.className = 'task-item';
         li.innerHTML = `
             <div class="task-info">
-                <b>${task.name}</b>
+                <btitle>${task.name}</btitle>
                 <span>Orario: ${task.time}</span>
             </div>
             <button class="delete-btn" onclick="deleteTask(${index})">Elimina</button>
@@ -32,6 +39,9 @@ function renderTasks() {
     });
 }
 
+// ==========================================
+// LOGICA CORE TASKS
+// ==========================================
 function addTask() {
     const name = taskNameInput.value;
     const time = taskTimeInput.value;
@@ -46,10 +56,15 @@ function addTask() {
         tasks.push(newTask);
         saveTasks();
         renderTasks();
+        
+        // Reset campi input
         taskNameInput.value = '';
         taskTimeInput.value = '';
+        
+        // Attiva la modalità schermo attivo
+        requestWakeLock();
     } else {
-        alert("Inserisci nome e orario!");
+        alert("Per favore, inserisci sia il nome che l'orario!");
     }
 }
 
@@ -59,8 +74,10 @@ window.deleteTask = function(index) {
     renderTasks();
 }
 
-// --- MOTORE ALARMO ---
-
+// ==========================================
+// MOTORE ALARMO (SONORO E VISIVO)
+// ==========================================
+// Controlla ogni secondo se un task deve scadere
 setInterval(() => {
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -75,24 +92,25 @@ setInterval(() => {
 }, 1000);
 
 function triggerAlarm(task) {
-    // Feedback Visivo Pulsante
+    // 1. Feedback Visivo Pulsante
     document.body.style.backgroundColor = "#ff4757";
     
-    // Sintesi Sonora Avanzata (Oscillatore + LFO)
+    // 2. Sintesi Sonora Avanzata (Oscillatore + LFO)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
     const playPulse = () => {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        osc.type = 'triangle';
-        // Frequenza variabile per creare un effetto "allarme"
+        osc.type = 'triangle'; // Suono più pieno e meno stridente
+        // Frequenza variabile per creare un effetto "sirena"
         osc.frequency.setValueAtTime(300 + Math.random() * 400, audioCtx.currentTime);
         
+        // LFO (Low Frequency Oscillator) per far oscillare la frequenza
         const lfo = audioCtx.createOscillator();
         const lfoGain = audioCtx.createGain();
         lfo.type = 'sine';
-        lfo.frequency.setValueAtTime(5, audioCtx.currentTime);
+        lfo.frequency.setValueAtTime(5, audioCtx.currentTime); // 5Hz di oscillazione
         lfoGain.gain.setValueAtTime(200, audioCtx.currentTime);
         
         lfo.connect(lfoGain);
@@ -117,18 +135,68 @@ function triggerAlarm(task) {
     const interval = setInterval(() => {
         playPulse();
         count++;
-        if (count > 8) clearInterval(interval);
+        if (count > 8) clearInterval(interval); // Ripetizione ciclica del suono
     }, 600);
 
-    // Notifica visiva standard
+    // 3. Notifica Visiva standard
     setTimeout(() => {
         alert(`⚠️ ALLARME: ${task.name}`);
         document.body.style.backgroundColor = "var(--bg-color)";
     }, 500);
 }
 
-// --- PORTABILITÀ E CONDIVISIONE ---
+// ==========================================
+// WAKE LOCK API (Mantenere schermo acceso)
+// ==========================================
+let wakeLock = null;
 
+async function requestWakeLock() {
+    try {
+        // Richiedi al browser di non spegnere lo schermo
+        wakeLock = await navigator.requestWakeLock('screen');
+        
+        statusText.innerText = "Attiva";
+        dot.classList.add('active');
+        console.log("Wake Lock acquisito");
+    } catch (err) {
+        console.error(`${err}`);
+        statusText.innerText = "Non supportata";
+    }
+}
+
+function releaseWakeLock() {
+    if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+        statusText.innerText = "Disattivata";
+        dot.classList.remove('active');
+        console.log("Wake Lock rilasciato");
+    }
+}
+
+// Richiedi il lock quando si aggiunge un task
+addTaskBtn.addEventListener('click', () => {
+    addTask();
+    requestWakeLock();
+});
+
+// Rilascia il lock quando l'app non è più visibile (risparmio batteria)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        releaseWakeLock();
+    } else {
+        // Quando l'utente torna nell'app, riprendiamo il lock se ci sono task
+        if (tasks.length > 0) {
+            requestWakeLock();
+        }
+    }
+});
+
+// ==========================================
+// PORTABILITÀ E CONDIVISIONE
+// ==========================================
+
+// Esporta i task in un file JSON scaricabile
 exportBtn.addEventListener('click', () => {
     const dataStr = JSON.stringify(tasks);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
@@ -138,6 +206,7 @@ exportBtn.addEventListener('click', () => {
     link.click();
 });
 
+// Importa i task da un file JSON selezionato
 importBtn.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -146,16 +215,21 @@ importBtn.addEventListener('click', () => {
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = event => {
-            tasks = JSON.parse(event.target.result);
-            saveTasks();
-            renderTasks();
-            alert("Importati con successo!");
+            try {
+                tasks = JSON.parse(event.target.result);
+                saveTasks();
+                renderTasks();
+                alert("Task importati con successo!");
+            } catch (e) {
+                alert("Errore nel file JSON caricato.");
+            }
         };
         reader.readAsText(file);
     };
     input.click();
 });
 
+// Condivisione nativa (Web Share API)
 shareBtn.addEventListener('click', async () => {
     if (navigator.share) {
         try {
@@ -172,7 +246,11 @@ shareBtn.addEventListener('click', async () => {
     }
 });
 
-// Registrazione Service Worker
+// ==========================================
+// INITIALIZATION
+// ==========================================
+
+// Registrazione Service Worker per il supporto Offline
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
@@ -181,5 +259,5 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-addTaskBtn.addEventListener('click', addTask);
+// Render iniziale della lista
 renderTasks();
