@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskAlarm - La tua Sveglia di Task</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Il manifest verrà aggiunto in fase PWA -->
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>TaskAlarm</h1>
+            <p>Imposta i tuoi obiettivi, noi ti ricordiamo.</p>
+        </header>
+
+        <section class="input-section">
+            <input type="text" id="taskName" placeholder="Cosa devi fare?" required>
+            <input type="time" id="taskTime" required>
+            <button id="addTaskBtn">Aggiungi Task</button>
+        </section>
+
+        <section class="list-section">
+            <h2>Task in programma</h2>
+            <ul id="taskList">
+                <!-- I task appariranno qui dinamicamente -->
+            </ul>
+        </section>
+
+        <!-- Area per i controlli di esportazione (Fase 4) -->
+        <footer class="actions">
+            <button id="exportData" class="secondary">Esporta Dati</button>
+            <button id="importData" class="secondary">Importa Dati</button>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
