@@ -1,5 +1,5 @@
 {
-  "name": "TaskAlarm - Gestione Task e Sveglia",
+  "name": "TaskAlarm - Gestione Task",
   "short_name": "TaskAlarm",
   "description": "Gestisci i tuoi task con allarmi sonori e visivi locali.",
   "start_url": "index.html",
