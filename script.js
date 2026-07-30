@@ -5,22 +5,19 @@ const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
 const exportBtn = document.getElementById('exportData');
 const importBtn = document.getElementById('importData');
+const shareBtn = document.getElementById('shareBtn');
 
-// Stato dell'applicazione: un array di oggetti task
-// Carichiamo i dati dal localStorage all'avvio o usiamo un array vuoto
+// Stato dell'applicazione: Caricamento dal localStorage
 let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
 
-// --- FUNZIONI CORE ---
+// --- FUNZIONI DI GESTIONE DATI ---
 
-// Funzione per salvare i task nel localStorage
 function saveTasks() {
     localStorage.setItem('myTasks', JSON.stringify(tasks));
 }
 
-// Funzione per renderizzare la lista dei task nell'HTML
 function renderTasks() {
-    taskList.innerHTML = ''; // Svuota la lista attuale
-
+    taskList.innerHTML = '';
     tasks.forEach((task, index) => {
         const li = document.createElement('li');
         li.className = 'task-item';
@@ -35,7 +32,6 @@ function renderTasks() {
     });
 }
 
-// Funzione per aggiungere un nuovo task
 function addTask() {
     const name = taskNameInput.value;
     const time = taskTimeInput.value;
@@ -45,31 +41,26 @@ function addTask() {
             id: Date.now(),
             name: name,
             time: time,
-            triggered: false // Flag per non far scattare l'allarme più volte
+            triggered: false
         };
-
         tasks.push(newTask);
         saveTasks();
         renderTasks();
-
-        // Reset campi input
         taskNameInput.value = '';
         taskTimeInput.value = '';
     } else {
-        alert("Per favore, inserisci sia il nome che l'orario.");
+        alert("Inserisci nome e orario!");
     }
 }
 
-// Funzione per eliminare un task
 window.deleteTask = function(index) {
     tasks.splice(index, 1);
     saveTasks();
     renderTasks();
 }
 
-// --- LOGICA ALARMO ---
+// --- MOTORE ALARMO ---
 
-// Controlla ogni secondo se un task deve scadere
 setInterval(() => {
     const now = new Date();
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -77,57 +68,76 @@ setInterval(() => {
     tasks.forEach(task => {
         if (task.time === currentTime && !task.triggered) {
             triggerAlarm(task);
-            task.triggered = true; // Impedisce ripetizioni ogni secondo
-            saveTasks(); // Salva lo stato "attivato"
+            task.triggered = true;
+            saveTasks();
         }
     });
 }, 1000);
 
-// Azione dell'allarme (Sonoro e Visivo)
 function triggerAlarm(task) {
-    // Segnale Visivo: Cambio stile del corpo della pagina
+    // Feedback Visivo Pulsante
     document.body.style.backgroundColor = "#ff4757";
     
-    // Segnale Sonoro: Creiamo un "beep" usando l'AudioContext (non serve un file audio esterno)
+    // Sintesi Sonora Avanzata (Oscillatore + LFO)
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Nota LA
-    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 2); // Suona per 2 secondi
-
-    // Alert visivo extra
-    alert(`⚠️ ALLARME: ${task.name}`);
     
-    // Dopo 5 secondi torna il colore normale
+    const playPulse = () => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        // Frequenza variabile per creare un effetto "allarme"
+        osc.frequency.setValueAtTime(300 + Math.random() * 400, audioCtx.currentTime);
+        
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(5, audioCtx.currentTime);
+        lfoGain.gain.setValueAtTime(200, audioCtx.currentTime);
+        
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        lfo.start();
+        
+        setTimeout(() => {
+            osc.stop();
+            lfo.stop();
+        }, 800);
+    };
+
+    let count = 0;
+    const interval = setInterval(() => {
+        playPulse();
+        count++;
+        if (count > 8) clearInterval(interval);
+    }, 600);
+
+    // Notifica visiva standard
     setTimeout(() => {
+        alert(`⚠️ ALLARME: ${task.name}`);
         document.body.style.backgroundColor = "var(--bg-color)";
-    }, 5000);
+    }, 500);
 }
 
-// --- PORTABILITÀ (Esportazione/Importazione) ---
+// --- PORTABILITÀ E CONDIVISIONE ---
 
-// Esporta i task in un file JSON scaricabile
 exportBtn.addEventListener('click', () => {
     const dataStr = JSON.stringify(tasks);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = 'my_tasks.json';
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', 'my_tasks.json');
+    link.click();
 });
 
-// Importa i task da un file JSON selezionato
 importBtn.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -139,25 +149,37 @@ importBtn.addEventListener('click', () => {
             tasks = JSON.parse(event.target.result);
             saveTasks();
             renderTasks();
-            alert("Task importati con successo!");
+            alert("Importati con successo!");
         };
         reader.readAsText(file);
     };
     input.click();
 });
 
-// Event Listener per il pulsante aggiungi
-addTaskBtn.addEventListener('click', addTask);
+shareBtn.addEventListener('click', async () => {
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'TaskAlarm',
+                text: 'Usa questa app per gestire i tuoi task con allarmi locali!',
+                url: window.location.href
+            });
+        } catch (err) {
+            console.log('Errore condivisione', err);
+        }
+    } else {
+        prompt(`Condividi il link dell'app:\n${window.location.href}`);
+    }
+});
 
-// Render iniziale
-renderTasks();
-
-
-// Registrazione del Service Worker per il supporto Offline
+// Registrazione Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js')
-            .then(reg => console.log('Service Worker registrato con successo!'))
-            .catch(err => console.log('Errore nella registrazione del Service Worker', err));
+            .then(reg => console.log('Service Worker attivo'))
+            .catch(err => console.log('Errore SW', err));
     });
 }
+
+addTaskBtn.addEventListener('click', addTask);
+renderTasks();
