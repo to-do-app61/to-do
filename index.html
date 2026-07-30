@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskAlarm - La tua Sveglia di Task</title>
+    <title>TaskAlarm - Gestione Task e Sveglia</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Il manifest verrà aggiunto in fase PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
 </head>
 <body>
 
@@ -28,11 +29,16 @@
             </ul>
         </section>
 
-        <!-- Area per i controlli di esportazione (Fase 4) -->
         <footer class="actions">
-            <button id="exportData" class="secondary">Esporta Dati</button>
-            <button id="importData" class="secondary">Importa Dati</button>
+            <button id="exportData" class="secondary">Esporta JSON</button>
+            <button id="importData" class="secondary">Importa JSON</button>
+            <button id="shareBtn" class="secondary" style="background-color: #2ed573;">Condividi App</button>
         </footer>
+
+        <div id="installInstructions" class="instructions">
+            💡 <strong>Come installare:</strong><br>
+            Clicca sui 3 puntini del browser e seleziona "Aggiungi a schermo segnapunti" o "Installa app".
+        </div>
     </div>
 
     <script src="script.js"></script>
