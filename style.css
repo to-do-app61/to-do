@@ -4,6 +4,7 @@
     --text-color: #333;
     --card-bg: #ffffff;
     --accent-color: #ff4757;
+    --success-color: #2ed573;
 }
 
 body {
@@ -14,67 +15,77 @@ body {
     display: flex;
     justify-content: center;
     padding: 20px;
+    transition: background-color 0.5s ease;
 }
 
 .app-container {
     width: 100%;
-    max-width: 400px; /* Ottimizzato per lo schermo dello smartphone */
+    max-width: 400px;
     background: var(--card-bg);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
 header h1 {
     margin: 0;
     color: var(--primary-color);
+    font-size: 2rem;
 }
 
 header p {
     font-size: 0.9rem;
     color: #666;
+    margin-bottom: 20px;
 }
 
 .input-section {
     margin: 30px 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
 input {
-    padding: 12px;
+    padding: 14px;
     border: 2px solid #ddd;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 1rem;
+    outline: none;
+}
+
+input:focus {
+    border-color: var(--primary-color);
 }
 
 button {
-    padding: 12px;
+    padding: 14px;
     background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: bold;
+    font-size: 1rem;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition: transform 0.1s, background-color 0.2s;
 }
 
 button:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
 }
 
 .secondary {
     background-color: #e0e0e0;
     color: #333;
-    margin-top: 10px;
-    padding: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
 }
 
 .list-section h2 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     border-bottom: 2px solid var(--bg-color);
     padding-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 ul {
@@ -87,11 +98,11 @@ ul {
     border: 1px solid #eee;
     padding: 15px;
     margin: 10px 0;
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.4s ease;
 }
 
 @keyframes fadeIn {
@@ -111,6 +122,23 @@ ul {
 
 .delete-btn {
     background: var(--accent-color);
-    padding: 8px;
+    padding: 8px 12px;
     font-size: 0.8rem;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.instructions {
+    margin-top: 30px;
+    font-size: 0.75rem;
+    color: #999;
+    text-align: center;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    border-radius: 10px;
 }
